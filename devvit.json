@@ -15,6 +15,10 @@
     "dev": "npm run build:watch"
   },
   "permissions": {
+    "http": {
+      "enable": true,
+      "domains": ["discord.com"]
+    },
     "reddit": {
       "enable": true,
       "scope": "moderator"
@@ -24,6 +28,16 @@
     "tasks": {
       "schedule-event": {
         "endpoint": "/internal/scheduler/schedule-event"
+      }
+    }
+  },
+  "settings": {
+    "subreddit": {
+      "discordWebhookUrl": {
+        "type": "string",
+        "label": "Discord Webhook URL",
+        "defaultValue": "",
+        "helpText": "Paste the Discord incoming webhook URL for this subreddit."
       }
     }
   }

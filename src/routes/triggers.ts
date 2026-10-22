@@ -69,10 +69,6 @@ triggers.post('/on-modmail', async (c) => {
     const command = parts[0].slice(1).toLowerCase();
     const args = parts.slice(1);
 
-    const moderator = input.messageAuthor as
-    | { name?: string; username?: string }
-    | undefined;
-
   const conversationUser = result.user as
     | { name?: string; username?: string }
     | undefined;
@@ -87,7 +83,7 @@ triggers.post('/on-modmail', async (c) => {
           isInternal: true,
         });
       },
-      createdBy: moderator?.username ?? 'unknown',
+      createdBy: message.author?.name ?? 'unknown',
       conversationUser: conversationUser?.username ?? 'unknown',
     });
   } catch (error) {
