@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { createServer, getServerPort } from '@devvit/web/server';
 import { api } from './routes/api.js';
 import { triggers } from './routes/triggers.js';
+import { schedulerRoutes } from './routes/scheduler.js';
 
 // Root app for all HTTP endpoints served by the Devvit Web server bundle.
 const app = new Hono();
@@ -11,6 +12,7 @@ const internal = new Hono();
 
 // Mount internal endpoint routers.
 internal.route('/triggers', triggers);
+internal.route('/scheduler', schedulerRoutes);
 
 // Mount public API router (template placeholder).
 app.route('/api', api);

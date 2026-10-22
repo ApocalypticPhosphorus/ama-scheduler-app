@@ -19,5 +19,12 @@
       "enable": true,
       "scope": "moderator"
     }
+  },
+  "scheduler": {
+    "tasks": {
+      "schedule-event": {
+        "endpoint": "/internal/scheduler/schedule-event"
+      }
+    }
   }
 }

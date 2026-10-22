@@ -69,6 +69,14 @@ triggers.post('/on-modmail', async (c) => {
     const command = parts[0].slice(1).toLowerCase();
     const args = parts.slice(1);
 
+    const moderator = input.messageAuthor as
+    | { name?: string; username?: string }
+    | undefined;
+
+  const conversationUser = result.user as
+    | { name?: string; username?: string }
+    | undefined;
+
     await dispatchModMailCommand(command, args, {
       subredditName: input.conversationSubreddit?.name ?? 'unknown',
       conversationId: input.conversationId,
@@ -79,6 +87,8 @@ triggers.post('/on-modmail', async (c) => {
           isInternal: true,
         });
       },
+      createdBy: moderator?.username ?? 'unknown',
+      conversationUser: conversationUser?.username ?? 'unknown',
     });
   } catch (error) {
     console.error(
