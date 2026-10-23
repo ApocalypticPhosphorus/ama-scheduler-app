@@ -26,6 +26,20 @@ schedulerRoutes.post('/schedule-event', async (c) => {
   const webhookSetting = await settings.get('discordWebhookUrl');
   const webhookUrl =
     typeof webhookSetting === 'string' ? webhookSetting.trim() : '';
+  
+  const roleSetting = await settings.get('discordRoleId');
+  const configuredRoleId =
+    typeof roleSetting === 'string' ? roleSetting.trim() : '';
+
+  const roleId = /^\d{17,20}$/.test(configuredRoleId)
+    ? configuredRoleId
+    : '';
+
+  if (configuredRoleId && !roleId) {
+    console.warn(
+      '[scheduler] Discord role ID is invalid; skipping role mention.'
+    );
+  }
 
   console.log('[scheduler] Discord webhook configured:', Boolean(webhookUrl));
 
@@ -47,6 +61,7 @@ schedulerRoutes.post('/schedule-event', async (c) => {
         },
         body: JSON.stringify({
           content:
+            `${roleId ? `<@&${roleId}>\n` : ''}` + 
             `**Scheduled Event: ${data.title}**\n` +
             `**Scheduled for:** <t:${Math.floor(
               new Date(data.runAt).getTime() / 1000
@@ -54,9 +69,9 @@ schedulerRoutes.post('/schedule-event', async (c) => {
             `**Subreddit:** r/${data.subredditName}\n` +
             `**Created by:** u/${data.createdBy}\n` +
             `**Conversation user:** ${data.conversationUser}`,
-          allowed_mentions: {
-            parse: [],
-          },
+          allowed_mentions: roleId
+            ? { roles: [roleId], users: [], parse: [] }
+            : { parse: [] },
         }),
       });
 
@@ -73,7 +88,6 @@ schedulerRoutes.post('/schedule-event', async (c) => {
   }
 
   // Future additions:
-  // - Send the Discord webhook.
   // - Modify the subreddit sidebar.
   // Keep this handler safe to retry.
 

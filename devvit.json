@@ -38,6 +38,12 @@
         "label": "Discord Webhook URL",
         "defaultValue": "",
         "helpText": "Paste the Discord incoming webhook URL for this subreddit."
+      },
+      "discordRoleId": {
+        "type": "string",
+        "label": "Discord Role ID",
+        "defaultValue": "",
+        "helpText": "Optional. Enter the ID of the Discord role to ping when a scheduled event fires."
       }
     }
   }
