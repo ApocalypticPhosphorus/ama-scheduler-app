@@ -1,5 +1,14 @@
 
 import { scheduleEvent } from './schedule-event.js';
+import { scheduler } from '@devvit/web/server';
+import {
+  getScheduledEvents,
+  removeScheduledEvent,
+} from './events-store.js';
+import {
+  formatScheduledTime,
+  parseZonedScheduleTime,
+} from './time-zones.js';
 
 export type ModMailCommandContext = {
   subredditName: string;
@@ -51,16 +60,16 @@ const commands: Record<string, CommandDefinition> = {
         },
     },
     
+    
     schedule: {
-    description: 'Schedule an event for a future UTC date and time.',
-    usage: '!schedule "Title" YYYY-MM-DD HH:mm',
-    minArgs: 3,
+    description: 'Schedule an event for a future date and time in a specified timezone.',
+    usage: '!schedule "Title" YYYY-MM-DD HH:mm <timezone>',
+    minArgs: 4,
     execute: async (args, context) => {
-        // The final two arguments are always the date and time.
-        const time = args[args.length - 1];
-        const date = args[args.length - 2];
-
-        let title = args.slice(0, -2).join(' ').trim();
+        const timeZoneInput = args[args.length - 1];
+        const time = args[args.length - 2];
+        const date = args[args.length - 3];
+        let title = args.slice(0, -3).join(' ').trim();
 
         // Remove optional quotes around the title.
         if (
@@ -77,40 +86,40 @@ const commands: Record<string, CommandDefinition> = {
         return;
         }
 
-        // Require an exact date and 24-hour UTC time.
-        if (!date || !time || args.length < 3) {
-            await context.respond(
-                'Usage: `!schedule "Title" YYYY-MM-DD HH:mm`'
-            );
-            return;
-        }
         if (
+        !date ||
+        !time ||
+        !timeZoneInput ||
         !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
         !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)
         ) {
         await context.respond(
-            'Invalid date or time.\n\n' +
-            'Usage: `!schedule "Title" YYYY-MM-DD HH:mm`\n' +
-            'All times must be in UTC.'
+            'Invalid arguments.\n\n' +
+            'Usage: `!schedule "Title" YYYY-MM-DD HH:mm <timezone>`\n\n' +
+            'Timezones can be ET, CT, MT, PT, UTC, or an IANA name such as America/New_York.'
         );
         return;
         }
 
-        const runAt = new Date(`${date}T${time}:00.000Z`);
+        let scheduledTime;
 
-        // Reject impossible dates and times in the past.
-        if (
-        Number.isNaN(runAt.getTime()) ||
-        runAt.toISOString().slice(0, 10) !== date ||
-        runAt.toISOString().slice(11, 16) !== time ||
-        runAt.getTime() <= Date.now()
-        ) {
+        try {
+        scheduledTime = parseZonedScheduleTime(
+            date,
+            time,
+            timeZoneInput
+        );
+        } catch (error) {
         await context.respond(
-            'That date/time is invalid or has already passed. ' +
-            'Please provide a future date and time in UTC.'
+            error instanceof Error
+            ? error.message
+            : 'Could not interpret that date, time, and timezone.'
         );
         return;
         }
+
+        const { runAt, timeZone, timeZoneLabel, localDateTime } =
+        scheduledTime;
 
         const data = {
         title,
@@ -120,28 +129,132 @@ const commands: Record<string, CommandDefinition> = {
         conversationUser: context.conversationUser,
         subredditName: context.subredditName,
         conversationId: context.conversationId,
+        timeZone,
+        timeZoneLabel,
+        localDateTime,
         };
 
         try {
         const jobId = await scheduleEvent(data, runAt);
 
         await context.respond(
-            `## Schedule Created\n\n` +
-            `**Title:** ${title}\n\n` +
-            `**Scheduled for:** ${runAt.toISOString().replace('T', ' ').replace('.000Z', ' UTC')}\n\n` +
+            `## Scheduled AMA Created: ${title}\n\n` +
+            `**Scheduled for:** ${formatScheduledTime(data)}\n\n` +
+            `**Host:** u/${context.conversationUser}\n\n` +
             `**Created by:** u/${context.createdBy}\n\n` +
-            `**Conversation user:** u/${context.conversationUser}\n\n` +
             `**Job ID:** \`${jobId}\``
         );
         } catch (error) {
         console.error('[schedule] Failed to create job:', error);
-
         await context.respond(
             'Failed to create the schedule. Check the app logs and try again.'
         );
         }
     },
     },
+
+    list: {
+    description: 'List upcoming scheduled events.',
+    usage: '!list',
+    minArgs: 0,
+    maxArgs: 0,
+    execute: async (_args, context) => {
+      try {
+        const events = await getScheduledEvents();
+        const jobs = await scheduler.listJobs();
+        const activeJobIds = new Set(jobs.map((job) => job.id));
+        const now = Date.now();
+
+        // Remove records for jobs that no longer exist.
+        for (const event of events) {
+          if (!activeJobIds.has(event.jobId)) {
+            await removeScheduledEvent(event.jobId);
+          }
+        }
+
+        const upcoming = events.filter(
+          (event) =>
+            activeJobIds.has(event.jobId) &&
+            new Date(event.runAt).getTime() > now
+        );
+
+        if (upcoming.length === 0) {
+          await context.respond('There are no upcoming scheduled AMAs.');
+          return;
+        }
+
+        const eventList = upcoming
+          .map(
+            (event) =>
+              `- **${event.title}**\n` +
+              `  - **When:** ${formatScheduledTime(event)}\n\n` +
+              `  - **ID:** \`${event.jobId}\`\n` +
+              `  - **Host:** u/${event.conversationUser}`
+          )
+          .join('\n');
+
+        await context.respond(
+          `## Upcoming Scheduled Events\n\n${eventList}\n\n` +
+          'Use `!cancel <id>` to cancel an event.'
+        );
+      } catch (error) {
+        console.error('[list] Failed to list scheduled AMAs:', error);
+        await context.respond(
+          'Failed to retrieve scheduled AMAs. Check the app logs and try again.'
+        );
+      }
+    },
+  },
+    cancel: {
+    description: 'Cancel a scheduled event by its job ID.',
+    usage: '!cancel <id>',
+    minArgs: 1,
+    maxArgs: 1,
+    execute: async (args, context) => {
+      const jobId = args[0];
+
+      if (!jobId) {
+        await context.respond('Usage: `!cancel <id>`');
+        return;
+     }
+
+      try {
+        const events = await getScheduledEvents();
+        const event = events.find((item) => item.jobId === jobId);
+
+        if (!event) {
+          await context.respond(
+            `No scheduled event was found with ID \`${jobId}\`.\n\n` +
+            'Use `!list` to see upcoming events and their IDs.'
+          );
+          return;
+        }
+
+        if (new Date(event.runAt).getTime() <= Date.now()) {
+          await removeScheduledEvent(jobId);
+          await context.respond(
+            'This event has already reached its scheduled time and cannot be cancelled.'
+          );
+          return;
+        }
+
+        await scheduler.cancelJob(jobId);
+        await removeScheduledEvent(jobId);
+
+        await context.respond(
+          `## Scheduled AMA Cancelled\n\n` +
+          `**Event:** ${event.title}\n\n` +
+          `**Previously scheduled for:** ${formatScheduledTime(event)}\n\n` +
+          `**Job ID:** \`${jobId}\``
+        );
+      } catch (error) {
+        console.error('[cancel] Failed to cancel scheduled event:', error);
+        await context.respond(
+          'Failed to cancel the event. It may have already fired, or the scheduler may be unavailable. Try `!list` to check the current events.'
+        );
+      }
+    },
+  },
 
 };
 

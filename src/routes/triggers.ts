@@ -84,7 +84,7 @@ triggers.post('/on-modmail', async (c) => {
         });
       },
       createdBy: message.author?.name ?? 'unknown',
-      conversationUser: conversationUser?.username ?? 'unknown',
+      conversationUser: conversationUser?.username ?? conversationUser?.name ?? 'unknown',
     });
   } catch (error) {
     console.error(

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { TaskRequest, TaskResponse } from '@devvit/web/server';
 import { settings } from '@devvit/web/server';
+import { formatScheduledTime } from '../features/modmail-commands/time-zones.js';
 
 export type ScheduleEventData = {
   title: string;
@@ -10,6 +11,9 @@ export type ScheduleEventData = {
   conversationUser: string;
   subredditName: string;
   conversationId: string;
+  timeZone?: string;
+  timeZoneLabel?: string;
+  localDateTime?: string;
 };
 
 export const schedulerRoutes = new Hono();
@@ -62,13 +66,14 @@ schedulerRoutes.post('/schedule-event', async (c) => {
         body: JSON.stringify({
           content:
             `${roleId ? `<@&${roleId}>\n` : ''}` + 
-            `**Scheduled Event: ${data.title}**\n` +
+            `**Scheduled AMA: ${data.title}**\n` +
             `**Scheduled for:** <t:${Math.floor(
               new Date(data.runAt).getTime() / 1000
             )}:F>\n` +
+            `**Time entered:** ${formatScheduledTime(data)}\n` +
+            `**Host:** ${data.conversationUser}\n` +
             `**Subreddit:** r/${data.subredditName}\n` +
-            `**Created by:** u/${data.createdBy}\n` +
-            `**Conversation user:** ${data.conversationUser}`,
+            `**Created by:** u/${data.createdBy}`,
           allowed_mentions: roleId
             ? { roles: [roleId], users: [], parse: [] }
             : { parse: [] },

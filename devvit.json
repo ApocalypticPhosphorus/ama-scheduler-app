@@ -22,7 +22,8 @@
     "reddit": {
       "enable": true,
       "scope": "moderator"
-    }
+    },
+    "redis": true
   },
   "scheduler": {
     "tasks": {
