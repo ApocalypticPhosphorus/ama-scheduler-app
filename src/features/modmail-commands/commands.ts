@@ -64,7 +64,7 @@ const commands: Record<string, CommandDefinition> = {
     
     schedule: {
     description: 'Schedule an event for a future date and time in a specified timezone.',
-    usage: '!schedule "Title" YYYY-MM-DD HH:mm <timezone>',
+    usage: '!schedule "Title" YYYY-MM-DD <time> <timezone>',
     minArgs: 4,
     execute: async (args, context) => {
         const timeZoneInput = args[args.length - 1];
@@ -91,12 +91,12 @@ const commands: Record<string, CommandDefinition> = {
         !date ||
         !time ||
         !timeZoneInput ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
         ) {
         await context.respond(
             'Invalid arguments.\n\n' +
-            'Usage: `!schedule "Title" YYYY-MM-DD HH:mm <timezone>`\n\n' +
+            'Usage: `!schedule "Title" YYYY-MM-DD 4:00PM PT`\n\n' +
+            'You can use 12-hour times such as `4:00PM` or 24-hour times such as `16:00`.\n\n' +
             'Timezones can be ET, CT, MT, PT, UTC, or an IANA name such as America/New_York.'
         );
         return;

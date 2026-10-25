@@ -17,6 +17,36 @@ export type ZonedScheduleTime = {
   localDateTime: string;
 };
 
+function normalizeTime(time: string): string {
+  // Already in 24-hour format, e.g. 16:00.
+  if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+    return time;
+  }
+
+  // 12-hour format with AM/PM attached, e.g. 4:00PM.
+  const match = time.match(
+    /^(1[0-2]|0?[1-9]):([0-5]\d)(AM|PM)$/i
+  );
+
+  if (!match) {
+    throw new Error(
+      'Invalid time. Use 4:00PM or 16:00 (AM/PM must be attached to the time).'
+    );
+  }
+
+  let hour = Number(match[1]);
+  const minute = match[2]!;
+  const period = match[3]!.toUpperCase();
+
+  if (period === 'AM') {
+    if (hour === 12) hour = 0;
+  } else {
+    if (hour !== 12) hour += 12;
+  }
+
+  return `${String(hour).padStart(2, '0')}:${minute}`;
+}
+
 export function parseZonedScheduleTime(
   date: string,
   time: string,
@@ -40,8 +70,10 @@ export function parseZonedScheduleTime(
   let localDateTime: Temporal.PlainDateTime;
 
   try {
+    const normalizedTime = normalizeTime(time);
+
     localDateTime = Temporal.PlainDateTime.from(
-      `${date}T${time}:00`,
+      `${date}T${normalizedTime}:00`,
       { overflow: 'reject' }
     );
   } catch {
