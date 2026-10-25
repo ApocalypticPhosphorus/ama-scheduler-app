@@ -6,14 +6,30 @@ import type {
 } from '@devvit/web/shared';
 import { reddit } from '@devvit/web/server';
 import { dispatchModMailCommand } from '../features/modmail-commands/commands.js';
+import { refreshAmaSidebar } from '../features/modmail-commands/sidebar.js';
 
 // Router for trigger endpoints declared in devvit.json/triggers.
 export const triggers = new Hono();
 
 triggers.post('/on-app-install', async (c) => {
-  // Parse install trigger payload.
   const input = await c.req.json<OnAppInstallRequest>();
-  console.log('App installed to subreddit: r/' + input.subreddit?.name);
+  const subredditName = input.subreddit?.name;
+
+  console.log('App installed to subreddit: r/' + subredditName);
+
+  if (subredditName) {
+    try {
+      await refreshAmaSidebar(subredditName);
+      console.log(
+        `[sidebar] Initialized for r/${subredditName}`
+      );
+    } catch (error) {
+      console.error(
+        `[sidebar] Failed to initialize for r/${subredditName}:`,
+        error
+      );
+    }
+  }
 
   return c.json<TriggerResponse>(
     {

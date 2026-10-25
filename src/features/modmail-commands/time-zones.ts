@@ -77,6 +77,7 @@ export function parseZonedScheduleTime(
   };
 }
 
+
 type EventTimeFields = {
   runAt: string;
   timeZone?: string;
@@ -87,16 +88,26 @@ type EventTimeFields = {
 export function formatScheduledTime(
   event: EventTimeFields
 ): string {
-  // Older saved events may not have timezone fields.
-  const localTime = event.localDateTime
-    ? event.localDateTime.replace('T', ' ').slice(0, 16)
-    : event.runAt.replace('T', ' ').replace(/\.\d+Z$/, '');
+  const timeZone = event.timeZone ?? 'Etc/UTC';
+  const instant = new Date(event.runAt);
 
-  const zoneLabel = event.timeZoneLabel ?? event.timeZone ?? 'UTC';
-  const utcTime = event.runAt
-    .replace('T', ' ')
-    .replace(/\.\d+Z$/, ' UTC')
-    .replace(/Z$/, ' UTC');
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'long',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).formatToParts(instant);
 
-  return `${localTime} ${zoneLabel} (${utcTime})`;
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '';
+
+  const date = `${get('weekday')} ${get('month')}/${get('day')}`;
+  const time = `${get('hour')}:${get('minute')} ${get('dayPeriod')}`;
+  const zone = event.timeZoneLabel ?? timeZone;
+
+  return `${date} at ${time} ${zone}`;
 }
+

@@ -9,6 +9,7 @@ import {
   formatScheduledTime,
   parseZonedScheduleTime,
 } from './time-zones.js';
+import { refreshAmaSidebar } from './sidebar.js';
 
 export type ModMailCommandContext = {
   subredditName: string;
@@ -136,6 +137,7 @@ const commands: Record<string, CommandDefinition> = {
 
         try {
         const jobId = await scheduleEvent(data, runAt);
+        await refreshAmaSidebar(context.subredditName);
 
         await context.respond(
             `## Scheduled AMA Created: ${title}\n\n` +
@@ -232,6 +234,7 @@ const commands: Record<string, CommandDefinition> = {
 
         if (new Date(event.runAt).getTime() <= Date.now()) {
           await removeScheduledEvent(jobId);
+          await refreshAmaSidebar(context.subredditName);
           await context.respond(
             'This event has already reached its scheduled time and cannot be cancelled.'
           );
@@ -240,6 +243,7 @@ const commands: Record<string, CommandDefinition> = {
 
         await scheduler.cancelJob(jobId);
         await removeScheduledEvent(jobId);
+        await refreshAmaSidebar(context.subredditName);
 
         await context.respond(
           `## Scheduled AMA Cancelled\n\n` +

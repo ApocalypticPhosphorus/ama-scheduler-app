@@ -1,8 +1,10 @@
 
 import { reddit } from '@devvit/web/server';
 import { getScheduledEvents } from './events-store.js';
+import { formatScheduledTime } from './time-zones.js';
 
 const SIDEBAR_WIDGET_NAME = 'Upcoming AMAs';
+
 
 function formatSidebarTime(event: {
   runAt: string;
@@ -10,14 +12,9 @@ function formatSidebarTime(event: {
   timeZoneLabel?: string;
   timeZone?: string;
 }): string {
-  const localTime = event.localDateTime
-    ? event.localDateTime.replace('T', ' ').slice(0, 16)
-    : event.runAt.replace('T', ' ').slice(0, 16);
-
-  const zone = event.timeZoneLabel ?? event.timeZone ?? 'UTC';
-
-  return `${localTime} ${zone}`;
+  return formatScheduledTime(event);
 }
+
 
 function escapeTableText(value: string): string {
   return value

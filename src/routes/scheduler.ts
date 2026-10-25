@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { TaskRequest, TaskResponse } from '@devvit/web/server';
 import { settings } from '@devvit/web/server';
 import { formatScheduledTime } from '../features/modmail-commands/time-zones.js';
+import { refreshAmaSidebar } from '../features/modmail-commands/sidebar.js';
 
 export type ScheduleEventData = {
   title: string;
@@ -92,9 +93,18 @@ schedulerRoutes.post('/schedule-event', async (c) => {
     }
   }
 
-  // Future additions:
-  // - Modify the subreddit sidebar.
-  // Keep this handler safe to retry.
+   // Refresh the sidebar after the scheduled event has elapsed.
+  try {
+    await refreshAmaSidebar(data.subredditName);
+    console.log(
+      `[sidebar] Refreshed after event "${data.title}" elapsed.`
+    );
+  } catch (error) {
+    console.error(
+      `[sidebar] Failed to refresh after event "${data.title}" elapsed:`,
+      error
+    );
+  }
 
   return c.json<TaskResponse>({ status: 'ok' }, 200);
 });
