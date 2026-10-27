@@ -133,7 +133,7 @@ export function formatScheduledTime(
     hour12: true,
   }).formatToParts(instant);
 
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
+  const get = (type: Intl.DateTimeFormatPartTypes): string =>
     parts.find((part) => part.type === type)?.value ?? '';
 
   const date = `${get('weekday')} ${get('month')}/${get('day')}`;
