@@ -1,123 +1,172 @@
-# Devvit Mod Tool Template
+# AMA Scheduler
 
-A template for building Reddit moderation tools using Devvit Web with feature-isolated server modules.  
-Each moderation capability lives in its own folder under `src/features` so developers can remove a feature by deleting its folder and unregistering its route wiring.
+A Reddit moderator tool for scheduling AMAs, managing upcoming events, and notifying your team through Discord.
 
-## Included Features
+AMA Scheduler lets moderators create scheduled AMA events directly through Reddit Modmail. Scheduled events can be announced in a configured Discord channel, with optional role mentions, and displayed in a subreddit sidebar widget.
 
-- **Mop Moderation Tool**: Moderator menu actions to remove/lock comment trees or all comments in a post.
-- **Keyword Vote Tallies**: Configurable `!keyword` vote comments with a sticky tally comment per post.
-- **Banned Words Enforcement**: Auto-removes matching posts/comments and sends a modmail notice to the author; subreddit moderators are exempt.
-- **Weekly Megathread Scheduler**: Posts a recurring weekly megathread on a configurable UTC weekday, plus manual mod-triggered creation.
-- **Flair Updater**: Updates user flair on each post/comment event using Redis-backed counts (`posts: X | comments: Y`).
+## Features
 
-### Feature Docs
+- **Schedule AMAs:** Create events for a specific date and time using moderator Modmail commands.
+- **Timezone support:** Enter times using common US timezone abbreviations, UTC, or supported IANA timezone identifiers.
+- **12-hour and 24-hour time formats:** Use formats such as `4:00PM` or `16:00`.
+- **List upcoming events:** Review scheduled events and their associated details.
+- **Cancel events:** Cancel scheduled events before they run.
+- **Discord notifications:** Automatically send a Discord webhook notification when a scheduled event fires.
+- **Optional Discord role mentions:** Configure a Discord role to ping when an event notification is sent.
+- **Subreddit sidebar:** Display upcoming public AMAs in a sidebar widget, automatically updating as events are scheduled, canceled, or completed.
+- **Private events:** Schedule events that remain manageable by moderators and can trigger Discord notifications but are excluded from the public sidebar.
 
-- [Mop README](src/features/mop/README.md)
-- [Keyword Votes README](src/features/keyword-votes/README.md)
-- [Banned Words README](src/features/banned-words/README.md)
-- [Weekly Megathread Scheduler README](src/features/scheduler-megathread/README.md)
-- [Flair Updater README](src/features/flair-updater/README.md)
+## Requirements
 
-## Tech Stack
+- A subreddit where the app is installed and has the required moderator permissions.
+- Access to Reddit Modmail.
+- A Discord server and incoming webhook for Discord notifications (optional).
+- A Discord role ID if role mentions are desired.
 
-- [Devvit](https://developers.reddit.com/): Reddit's platform for building and deploying apps
-- [Vite](https://vite.dev/): Fast build tool for the web components
-- [Hono](https://hono.dev/): Lightweight web framework for backend logic
-- [TypeScript](https://www.typescriptlang.org/): Type-safe development
+## Configuration
 
-## Getting Started
+After installing the app, configure its subreddit settings in Reddit's app settings.
 
-1. **Clone this template** or use it as a starting point for your mod tool
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Configure your app** in `devvit.json`:
-   - Update the app name
-   - Set your development subreddit
-4. **Start developing**:
-   ```bash
-   npm run dev
-   ```
-5. **Test your changes** in your development subreddit
+### Discord Webhook URL
 
-## Project Structure
+Enter the Discord incoming webhook URL for the channel where scheduled AMA notifications should appear.
 
-```text
-src/
-├── index.ts                  # Main server setup and route mounting
-├── features/
-│   ├── mop/
-│   │   ├── forms.ts          # Mop form handling logic
-│   │   ├── menu.ts           # Mop form field definitions
-│   │   └── nuke.ts           # Mop moderation operations
-│   ├── keyword-votes/
-│   │   ├── README.md
-│   │   ├── render.ts         # Sticky tally comment rendering
-│   │   ├── settings.ts       # Keyword settings parsing/validation
-│   │   ├── storage.ts        # Redis storage for tallies/comment ids
-│   │   └── triggers.ts       # Post create + comment submit handlers
-│   ├── banned-words/
-│   │   ├── README.md
-│   │   ├── matching.ts       # Word/phrase matching rules
-│   │   ├── settings.ts       # Banned words settings parsing/validation
-│   │   └── triggers.ts       # Post/comment enforcement + modmail
-│   ├── scheduler-megathread/
-│   │   ├── README.md
-│   │   ├── handlers.ts       # Scheduled/manual megathread creation logic
-│   │   ├── settings.ts       # Megathread settings parsing/validation
-│   │   └── storage.ts        # Weekly idempotency Redis keys
-│   └── flair-updater/
-│       ├── README.md
-│       ├── settings.ts       # Flair updater feature toggle access
-│       ├── storage.ts        # Redis post/comment counters
-│       └── triggers.ts       # Post/comment submission handlers
-└── routes/
-    ├── api.ts                # Public API endpoints (placeholder)
-    ├── forms.ts              # Mop form submit route handlers
-    ├── menu.ts               # Mop menu route handlers
-    ├── scheduler.ts          # Scheduler task endpoints
-    ├── settings.ts           # Install setting validation endpoints
-    └── triggers.ts           # App lifecycle/content trigger endpoints
+If no webhook is configured, scheduled events can still be managed and executed, but Discord notifications are skipped.
+
+**Keep this URL private.** Anyone with access to the webhook URL may be able to send messages to its associated Discord channel.
+
+### Discord Role ID
+
+Optionally enter the numeric ID of the Discord role to mention when an event notification is sent.
+
+Leave this field blank to disable role mentions. Discord notifications will only mention the configured role when its ID is valid.
+
+## Usage
+
+Commands are entered as internal notes in Reddit Modmail. Only commands written by moderators in internal Modmail messages are processed; automatically generated messages are ignored.
+
+### Schedule an event
+
+Use the `!schedule` command followed by the event title, date, time, timezone, and optional privacy flag.
+
+Example:
+
+`!schedule "Example AMA" 2026-11-10 4:00PM PT`
+
+This schedules an AMA for November 10, 2026, at 4:00 PM Pacific Time.
+
+A 24-hour time can also be used:
+
+`!schedule "Example AMA" 2026-11-10 16:00 PT`
+
+To create a private event, append `private`:
+
+`!schedule "Private AMA" 2026-11-10 4:00PM PT private`
+
+Private events are excluded from the public sidebar, but remain available through the event-management commands and can still generate Discord notifications.
+
+### List scheduled events
+
+Use:
+
+`!list`
+
+This displays scheduled events, including their scheduled times and the information needed to manage them.
+
+### Cancel an event
+
+Use:
+
+`!cancel`
+
+Follow the command's response to identify and cancel the intended event.
+
+### Get help
+
+Use:
+
+`!help`
+
+This provides help for the available Modmail commands.
+
+### Test the integration
+
+Use:
+
+`!test`
+
+This is available for testing the command integration.
+
+## Timezones
+
+The scheduler supports common US timezone abbreviations, including:
+
+- `ET` — Eastern Time
+- `CT` — Central Time
+- `MT` — Mountain Time
+- `PT` — Pacific Time
+- `UTC` and `GMT`
+
+Supported IANA timezone identifiers can also be used, such as `America/Los_Angeles` or `America/New_York`.
+
+The scheduler converts the requested local time into a scheduled instant. Ambiguous or nonexistent local times caused by daylight saving time transitions are rejected rather than silently interpreted.
+
+## Discord Notifications
+
+When a scheduled event fires, the app attempts to send a Discord message containing the event title, scheduled time, time entered, host username, subreddit, and moderator who created the event.
+
+If a valid Discord role ID is configured, the notification can also mention that role.
+
+A Discord notification failure does not prevent the scheduler from acknowledging the event task. Check the app logs if notifications are not being delivered.
+
+## Sidebar Behavior
+
+The app maintains an **Upcoming AMAs** subreddit sidebar widget.
+
+The widget lists future, public events in chronological order. It is refreshed when events are scheduled, canceled, or completed. Private events are excluded from the public listing.
+
+If no public upcoming events exist, the widget displays a message indicating that no upcoming AMAs are scheduled.
+
+## Data and Privacy
+
+The app stores scheduled event records using Reddit's app storage. These records include event details, scheduling information, the associated subreddit, the moderator who created the event, the host username, and identifiers used to manage the scheduled task.
+
+When Discord notifications are enabled, relevant event information is sent to the configured Discord webhook. This may include usernames and subreddit information.
+
+The app uses Reddit's Modmail API to retrieve conversations and respond with internal notes. It does not intentionally process ordinary non-moderator messages as commands.
+
+For more information, see:
+
+- [Privacy Policy](YOUR_PRIVACY_POLICY_URL)
+- [Terms of Service](YOUR_TERMS_OF_SERVICE_URL)
+
+## Permissions and External Services
+
+The app uses Reddit's moderator-scoped API access to process Modmail commands and manage the subreddit sidebar widget. It also uses Reddit app storage to retain scheduled event records and the Devvit scheduler to execute events at their configured times.
+
+### Fetch Domains
+
+- `discord.com` — sends scheduled event notifications to the Discord incoming webhook configured by the subreddit moderators.
+
+## Development
+
+The project uses TypeScript, Hono, and the Reddit Devvit Web platform.
+
+Install dependencies:
+
+```bash
+npm install
 ```
 
-## Customizing Your Mod Tool
+Build the app:
 
-This template is designed to be easily customizable:
+```bash
+npm run build
+```
 
-1. **Modify existing actions**: Edit the Mop logic in `src/features/mop/`.
-2. **Add/remove isolated features**: Add a folder under `src/features/` and wire/unwire it in `src/routes/*` and `devvit.json`.
-3. **Add new menu items**: Update `devvit.json` and add handlers in `src/routes/menu.ts`.
-4. **Add API endpoints**: Extend `src/routes/api.ts` for external integrations.
+For Devvit CLI commands and publishing instructions, consult the [Reddit Developer Documentation](https://developers.reddit.com/docs).
 
-## Configuration Overview
+## Project Information
 
-- **Install settings** are configured in `devvit.json` under `settings.subreddit`.
-- **Triggers** are configured in `devvit.json` and handled in `src/routes/triggers.ts`.
-- **Scheduled jobs** are configured in `devvit.json.scheduler.tasks` and handled in `src/routes/scheduler.ts`.
-- **Feature toggles** are checked inside each feature's `settings.ts`.
-
-## Commands
-
-- `npm run dev`: Starts development mode with live reload on your test subreddit
-- `npm run build`: Builds your mod tool for production
-- `npm run deploy`: Uploads a new version of your app to Reddit
-- `npm run launch`: Publishes your app for review and public use
-- `npm run login`: Authenticates your CLI with Reddit
-- `npm run type-check`: Runs TypeScript type checking, linting, and formatting
-
-## Development Notes
-
-- **Permissions**: This template requires `redis: true` and Reddit API moderator scope in `devvit.json`.
-- **User Types**: Mop menu items are restricted to `moderator`.
-- **Feature isolation**: Each feature folder is intentionally self-contained for template portability.
-
-## Deployment
-
-1. Test thoroughly in your development subreddit
-2. Run `npm run deploy` to upload your app
-3. Use `npm run launch` to submit for Reddit's app review process
-4. Once approved, users can install your mod tool from Reddit's app directory
-
-This template provides a modular starting point for building Reddit moderation tools that are easy to extend and easy to remove feature-by-feature.
+- **Platform:** Reddit Devvit
+- **License:** [YOUR_LICENSE]
