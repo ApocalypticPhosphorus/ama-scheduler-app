@@ -15,6 +15,7 @@ export type ScheduleEventData = {
   timeZone?: string;
   timeZoneLabel?: string;
   localDateTime?: string;
+  isPrivate?: boolean;
 };
 
 export const schedulerRoutes = new Hono();

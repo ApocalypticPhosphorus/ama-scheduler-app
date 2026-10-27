@@ -63,14 +63,18 @@ const commands: Record<string, CommandDefinition> = {
     
     
     schedule: {
-    description: 'Schedule an event for a future date and time in a specified timezone.',
-    usage: '!schedule "Title" YYYY-MM-DD <time> <timezone>',
+    description: 'Schedule an event for a future date and time in a specified timezone. Optional "private" argument can be added to not make it appear on the sidebar.',
+    usage: '!schedule "Title" YYYY-MM-DD <time> <timezone> [private]',
     minArgs: 4,
     execute: async (args, context) => {
-        const timeZoneInput = args[args.length - 1];
-        const time = args[args.length - 2];
-        const date = args[args.length - 3];
-        let title = args.slice(0, -3).join(' ').trim();
+        const isPrivate = args[args.length - 1]?.toLowerCase() === 'private';
+
+        const timeZoneIndex = args.length - (isPrivate ? 2 : 1);
+        const timeZoneInput = args[timeZoneIndex];
+        const time = args[timeZoneIndex - 1];
+        const date = args[timeZoneIndex - 2];
+
+        let title = args.slice(0, timeZoneIndex - 2).join(' ').trim();
 
         // Remove optional quotes around the title.
         if (
@@ -133,6 +137,7 @@ const commands: Record<string, CommandDefinition> = {
         timeZone,
         timeZoneLabel,
         localDateTime,
+        isPrivate,
         };
 
         try {

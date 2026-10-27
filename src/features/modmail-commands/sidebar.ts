@@ -29,7 +29,7 @@ export async function refreshAmaSidebar(
   const now = Date.now();
 
   const events = (await getScheduledEvents())
-    .filter((event) => new Date(event.runAt).getTime() > now)
+    .filter((event) =>!event.isPrivate &&new Date(event.runAt).getTime() > now)
     .sort(
       (a, b) =>
         new Date(a.runAt).getTime() -
