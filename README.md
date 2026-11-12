@@ -137,8 +137,8 @@ The app uses Reddit's Modmail API to retrieve conversations and respond with int
 
 For more information, see:
 
-- [Privacy Policy](PRIVACY.md)
-- [Terms of Service](TERMS.md)
+- [Privacy Policy](https://github.com/ApocalypticPhosphorus/ama-scheduler-app/blob/main/PRIVACY.md)
+- [Terms of Service](https://github.com/ApocalypticPhosphorus/ama-scheduler-app/blob/main/TERMS.md)
 
 ## Permissions and External Services
 
@@ -169,4 +169,5 @@ For Devvit CLI commands and publishing instructions, consult the [Reddit Develop
 ## Project Information
 
 - **Platform:** Reddit Devvit
-- **License:** See LICENSE
+- **License:** [License](https://github.com/ApocalypticPhosphorus/ama-scheduler-app/blob/main/LICENSE)
+- **Source:** [Source Code](https://github.com/ApocalypticPhosphorus/ama-scheduler-app)
