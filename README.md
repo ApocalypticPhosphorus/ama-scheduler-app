@@ -137,8 +137,8 @@ The app uses Reddit's Modmail API to retrieve conversations and respond with int
 
 For more information, see:
 
-- [Privacy Policy](YOUR_PRIVACY_POLICY_URL)
-- [Terms of Service](YOUR_TERMS_OF_SERVICE_URL)
+- [Privacy Policy](PRIVACY.md)
+- [Terms of Service](TERMS.md)
 
 ## Permissions and External Services
 
@@ -169,4 +169,4 @@ For Devvit CLI commands and publishing instructions, consult the [Reddit Develop
 ## Project Information
 
 - **Platform:** Reddit Devvit
-- **License:** [YOUR_LICENSE]
+- **License:** See LICENSE
